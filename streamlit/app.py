@@ -458,51 +458,86 @@ if not st.session_state.logged_in:
 # Homepage
 def homepage():
     st.title("Smart Fitness Tracker with Personalized Recommendations")
+
     words = '''
-        <p style="font-style:italic; font-family:cursive;">
-    Smart Fitness Tracker and Personalized Recommendations is an intelligent system that provides customized suggestions  
-    for diet, medicine, and workout plans based on user data.
-    </p>
-    <p style="font-style:italic; font-family:cursive;">
-    This machine learning-powered app uses collaborative and content-based filtering to generate personalized recommendations.
-    </p>
-    <p style="font-style:italic; font-family:cursive;">
-    This is a prototype of the actual system, and we plan to introduce various enhancements in the future.
-    </p>
+        <p style="font-style:italic; font-family:cursive; text-align:center; font-size:18px;">
+        Smart Fitness Tracker and Personalized Recommendations is an intelligent system that provides customized suggestions  
+        for diet, medicine, and workout plans based on user data.
+        </p>
+        <p style="font-style:italic; font-family:cursive; text-align:center; font-size:18px;">
+        This machine learning-powered app uses collaborative and content-based filtering to generate personalized recommendations.
+        </p>
+        <p style="font-style:italic; font-family:cursive; text-align:center; font-size:18px;">
+        This is a prototype of the actual system, and we plan to introduce various enhancements in the future.
+        </p>
     '''
 
     tech_stack = '''
-        <ul>
+        <ul style="font-size:16px;">
             <li style="font-style:italic; font-family:cursive;">Dataset: CSV, JSON Files</li>
-            <li style="font-style:italic; font-family:cursive;">Others libraries: Pandas, Numpy, Sklearn, Streamlit, Json</li>
-            <li style="font-style:italic; font-family:cursive;">Programming: Python, Notebook</li>
-            <li style="font-style:italic; font-family:cursive;">Visualization tools: Matplotlib, Plotly</li>
+            <li style="font-style:italic; font-family:cursive;">Libraries: Pandas, Numpy, Sklearn, Streamlit, Json</li>
+            <li style="font-style:italic; font-family:cursive;">Programming: Python, Jupyter Notebook</li>
+            <li style="font-style:italic; font-family:cursive;">Visualization: Matplotlib, Plotly</li>
         </ul>
     '''
 
-    image = Image.open('first.jpg')
+    # Load static images
+    image = Image.open('first.jpg')  # Static Image
+    gif_path = "motive.gif"  # Add the path to your GIF
 
+    # Layout with two columns
     left_column, right_column = st.columns(2)
     with left_column:
         st.markdown(words, unsafe_allow_html=True)
     with right_column:
-        st.image(image, use_column_width=True)
+        st.image(image, use_column_width=True)  # Show static image
+
+    # Display the GIF with proper alignment
+    st.markdown("<h2 style='text-align:center;'>Stay Motivated 💪</h2>", unsafe_allow_html=True)
+    st.image(gif_path, use_column_width=True, width = 400)  # Display the GIF
 
     st.title('Dataset')
     st.subheader("User Data from Database:")
 
-    # Fetch user data using the username from session state
+    # Fetch user data using session state
+    if st.session_state.username:
+        user_data = fetch_user_data(st.session_state.username)
+        if user_data:
+            st.dataframe(pd.DataFrame(user_data, columns=["ID", "Username", "Age", "Level", "Workout Plan"]))
+        else:
+            st.write("No user data found.")
+    else:
+        st.write("Please log in to view user data.")
 
-    files = load_data()
+    # Hardcoded dataset path
+    dataset_path = "dish_data.csv"  # Change this to your dataset path
 
-    json_files = get_suggestion(files, 10)
-    data_files = get_data(json_files)
+    # Load dataset
+    st.subheader("Loaded Dataset:")
+    try:
+        if dataset_path.endswith('.csv'):
+            data = pd.read_csv(dataset_path)
+            st.success("CSV file loaded successfully!")
+        elif dataset_path.endswith('.json'):
+            data = pd.read_json(dataset_path)
+            st.success("JSON file loaded successfully!")
+        else:
+            st.error("Unsupported file format. Please provide a CSV or JSON file.")
+            return
 
-    st.dataframe(data_files)
+        # Display the loaded dataset
+        st.dataframe(data)
+
+        # Display basic statistics
+        
+
+    except FileNotFoundError:
+        st.error(f"File not found at path: {dataset_path}. Please check the path and try again.")
+    except Exception as e:
+        st.error(f"Error loading dataset: {e}")
 
     st.title('Tech Stack')
     st.markdown(tech_stack, unsafe_allow_html=True)
-
 
 if selected == 'Home':
     homepage()
@@ -1217,7 +1252,7 @@ def food_browser():
                     steps_table += "<tr><td>No steps available.</td></tr>"
                 steps_table += "</table>"
                 st.markdown(steps_table, unsafe_allow_html=True)
-                
+
 if selected == "Rescipes Browser":
     food_browser()
 
