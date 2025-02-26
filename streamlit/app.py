@@ -5,6 +5,9 @@ import pandas as pd
 import matplotlib
 from test import *
 from Custom_Diet import *
+import speech_recognition as sr
+import pyttsx3
+import time
 from PIL import Image
 import sqlite3
 import matplotlib.pyplot as plt
@@ -331,21 +334,74 @@ if "show_signup" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# Side bar initialization and creation
+import streamlit as st
+import sqlite3
+import speech_recognition as sr
+import pyttsx3
+import time
+
+import streamlit as st
+import sqlite3
+import speech_recognition as sr
+from gtts import gTTS
+import os
+import time
+
+
+# Function to convert text to speech using gTTS
+def speak(text):
+    tts = gTTS(text=text, lang='en')
+    tts.save("response.mp3")
+    os.system("start response.mp3")  # Play the audio file
+
+# Text-Based AI Coach
+def text_ai_coach():
+    st.title("📝 AI Coach (Text-Based)")
+    st.write("Type your request below to get workout guidance, meal suggestions, and hydration tracking.")
+
+    # Available commands
+    st.write("**Available Commands:**")
+    st.write("- 'Start workout'")
+    st.write("- 'Suggest a meal'")
+    st.write("- 'Track hydration'")
+    st.write("- 'Stop'")
+
+    # User Input (Text)
+    user_input = st.text_input("Enter your command:", "")
+
+    if st.button("Submit"):
+        if user_input:
+            command = user_input.lower()
+            if "start workout" in command:
+                response = "Starting your workout. Let's begin with 10 squats."
+            elif "suggest a meal" in command:
+                response = "I suggest a healthy salad with grilled chicken for lunch."
+            elif "track hydration" in command:
+                response = "How many glasses of water have you had today?"
+            elif "3" in command :
+                response  = "Good, Can drink more Water."
+            elif "stop" in command:
+                response = "Stopping the AI Coach. Have a great day!"
+            else:
+                response = "Sorry, I didn't understand that command. Please try again."
+
+            st.write(f"**AI Coach:** {response}")
+            speak(response)  # Convert response to speech
+
+# Add the AI Coach to the sidebar menu
 with st.sidebar:
     if st.session_state.logged_in:
         selected = option_menu(
-
             menu_title="SFTPR",
             options=[
                 "Home", "Diet", "Workout Suggestion", "Medicine Recommender",
-                "Progress Tracker", "Exercise Browser", "Rescipes Browser",
-                "Health Tips", "Contact", "Settings"
+                "Progress Tracker", "Exercise Browser", "Recipes Browser",
+                "Health Tips", "Contact", "Settings", "AI Coach"
             ],
             icons=[
                 "house", "flower3", "wrench", "clipboard2-x",
                 "bar-chart", "trophy", "people",
-                "heart-pulse", "envelope", "gear"
+                "heart-pulse", "envelope", "gear", "robot"
             ],
             menu_icon="cast",
             default_index=0
@@ -361,6 +417,12 @@ with st.sidebar:
             st.experimental_rerun()
     else:
         selected = "Login"
+
+# Main App Logic
+if selected == "AI Coach":
+    text_ai_coach()
+
+
 
 
 def register_user(username, password):
