@@ -5,21 +5,39 @@ import pandas as pd
 import matplotlib
 from test import *
 from Custom_Diet import *
-import speech_recognition as sr
-import pyttsx3
-import time
 from PIL import Image
 import sqlite3
 import matplotlib.pyplot as plt
-from db_operations import get_all_contact_messages, get_all_diets, get_all_medicines, get_all_workouts, \
-    insert_contact_message
-
+from db_operations import get_all_contact_messages, get_all_diets, get_all_medicines, get_all_workouts,insert_contact_message
+import cohere
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+import smtplib
 
 def read_image(file_path):
     """Reads an image file and returns its binary data as a BLOB."""
     with open(file_path, "rb") as file:
         return file.read()
 
+load_dotenv(encoding="utf-8")
+api_key = os.getenv("COHERE_API_KEY")
+co = cohere.Client(api_key)
+
+# Load environment variables
+load_dotenv()
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+
+
+# Load Exercise Dataset
+def load_exercise_data(csv_file):
+    return pd.read_csv(csv_file)
+
+exercise_data = load_exercise_data('megaGymDataset.csv')
 
 # Function to initialize the database and create the required tables
 def init_db():
@@ -29,9 +47,10 @@ def init_db():
 
     # Drop old tables if needed
     cursor.execute("DROP TABLE IF EXISTS user_data")
+
     # Create user_data table
     cursor.execute('''
-         CREATE TABLE IF NOT EXISTS user_data (
+        CREATE TABLE IF NOT EXISTS user_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
             age INTEGER,
@@ -196,6 +215,20 @@ def init_db():
 # Call the init_db function to initialize the database
 init_db()
 
+# Function to collect user data and insert into the user_data table
+def collect_user_data(username):
+    st.subheader("Please Provide Your Fitness Information")
+    
+    # Collect user data
+    age = st.number_input("Enter Your Age", min_value=1, max_value=100, value=25)
+    level = st.selectbox("Select Your Fitness Level", ["beginner", "intermediate", "advanced"])
+    workout_plan = "Custom Workout Plan"  # Placeholder for now
+
+    # Insert user data into the database
+    if st.button("Save My Information"):
+        insert_user_data(username, age, level, workout_plan)
+        st.success("Your information has been saved successfully!")
+
 
 # Function to insert user data into the user_data table
 def insert_user_data(username, age, level, workout_plan):
@@ -334,18 +367,13 @@ if "show_signup" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-import streamlit as st
-import sqlite3
-import speech_recognition as sr
-import pyttsx3
-import time
 
+import time
 import streamlit as st
 import sqlite3
 import speech_recognition as sr
 from gtts import gTTS
 import os
-import time
 
 
 # Function to convert text to speech using gTTS
@@ -353,55 +381,23 @@ def speak(text):
     tts = gTTS(text=text, lang='en')
     tts.save("response.mp3")
     os.system("start response.mp3")  # Play the audio file
+    time.sleep(1)
 
-# Text-Based AI Coach
-def text_ai_coach():
-    st.title("📝 AI Coach (Text-Based)")
-    st.write("Type your request below to get workout guidance, meal suggestions, and hydration tracking.")
-
-    # Available commands
-    st.write("**Available Commands:**")
-    st.write("- 'Start workout'")
-    st.write("- 'Suggest a meal'")
-    st.write("- 'Track hydration'")
-    st.write("- 'Stop'")
-
-    # User Input (Text)
-    user_input = st.text_input("Enter your command:", "")
-
-    if st.button("Submit"):
-        if user_input:
-            command = user_input.lower()
-            if "start workout" in command:
-                response = "Starting your workout. Let's begin with 10 squats."
-            elif "suggest a meal" in command:
-                response = "I suggest a healthy salad with grilled chicken for lunch."
-            elif "track hydration" in command:
-                response = "How many glasses of water have you had today?"
-            elif "3" in command :
-                response  = "Good, Can drink more Water."
-            elif "stop" in command:
-                response = "Stopping the AI Coach. Have a great day!"
-            else:
-                response = "Sorry, I didn't understand that command. Please try again."
-
-            st.write(f"**AI Coach:** {response}")
-            speak(response)  # Convert response to speech
-
-# Add the AI Coach to the sidebar menu
+# Side bar initialization and creation
 with st.sidebar:
     if st.session_state.logged_in:
         selected = option_menu(
+
             menu_title="SFTPR",
             options=[
                 "Home", "Diet", "Workout Suggestion", "Medicine Recommender",
-                "Progress Tracker", "Exercise Browser", "Recipes Browser",
-                "Health Tips", "Contact", "Settings", "AI Coach"
+                "Progress Tracker", "Exercise Browser", "Rescipes Browser",
+                "Health Tips", "Contact", "AI Coach", "Chatbot","Daily Progress Email","Settings"
             ],
-            icons=[
-                "house", "flower3", "wrench", "clipboard2-x",
-                "bar-chart", "trophy", "people",
-                "heart-pulse", "envelope", "gear", "robot"
+            icons = [
+                "house", "apple", "person-running", "capsule",  
+                "graph-up", "trophy", "book",  
+                "heart-pulse", "envelope", "robot", "chat", "envelope-check", "gear"  
             ],
             menu_icon="cast",
             default_index=0
@@ -417,12 +413,6 @@ with st.sidebar:
             st.experimental_rerun()
     else:
         selected = "Login"
-
-# Main App Logic
-if selected == "AI Coach":
-    text_ai_coach()
-
-
 
 
 def register_user(username, password):
@@ -502,8 +492,16 @@ def signup_page():
         if st.form_submit_button("Register", use_container_width=True):
             if new_password == confirm_password:
                 register_user(new_username, new_password)
+                st.session_state.show_signup = False
+                st.session_state.logged_in = True
+                st.session_state.username = new_username
+                st.success("Registration successful! Please provide your fitness information.")
+                st.experimental_rerun()
             else:
                 st.error("❌ Passwords do not match.")
+
+    if st.session_state.logged_in:
+        collect_user_data(st.session_state.username)
 
     if st.button("Already have an account? Login"):
         st.session_state.show_signup = False
@@ -559,18 +557,6 @@ def homepage():
     st.image(gif_path, use_column_width=True, width = 400)  # Display the GIF
 
     st.title('Dataset')
-    st.subheader("User Data from Database:")
-
-    # Fetch user data using session state
-    if st.session_state.username:
-        user_data = fetch_user_data(st.session_state.username)
-        if user_data:
-            st.dataframe(pd.DataFrame(user_data, columns=["ID", "Username", "Age", "Level", "Workout Plan"]))
-        else:
-            st.write("No user data found.")
-    else:
-        st.write("Please log in to view user data.")
-
     # Hardcoded dataset path
     dataset_path = "dish_data.csv"  # Change this to your dataset path
 
@@ -579,7 +565,6 @@ def homepage():
     try:
         if dataset_path.endswith('.csv'):
             data = pd.read_csv(dataset_path)
-            st.success("CSV file loaded successfully!")
         elif dataset_path.endswith('.json'):
             data = pd.read_json(dataset_path)
             st.success("JSON file loaded successfully!")
@@ -604,6 +589,90 @@ def homepage():
 if selected == 'Home':
     homepage()
 
+def text_ai_coach():
+    st.title("📝 AI Coach (Text-Based)")
+    st.write("Type your request below to get workout guidance, meal suggestions, and hydration tracking.")
+
+    # Available commands
+    st.write("**Available Commands:**")
+    st.write("- 'Start workout'")
+    st.write("- 'Suggest a meal'")
+    st.write("- 'Track hydration'")
+    st.write("- 'Stop'")
+
+    # User Input (Text)
+    user_input = st.text_input("Enter your command:", "")
+
+    if st.button("Submit"):
+        if user_input:
+            command = user_input.lower()
+            if "start workout" in command:
+                # Fetch user data to provide personalized workout recommendations
+                user_data = fetch_user_data(st.session_state.username)
+                if user_data:
+                    # Extract age and level from user data
+                    age, level = user_data[0][2], user_data[0][3]
+                    st.write(f"Debug: User data fetched - Age: {age}, Level: {level}")  # Debugging
+
+                    # Generate workout plan based on level
+                    workout_plan = generate_workout(level)
+                    st.write(f"Debug: Generated workout plan - {workout_plan}")  # Debugging
+
+                    # Display personalized workout plan
+                    response = f"Starting your workout. Here's your personalized plan based on your level ({level}):\n"
+                    for day, exercises in workout_plan.items():
+                        response += f"\n{day}:\n"
+                        for exercise in exercises:
+                            response += f"- {exercise}\n"
+                else:
+                    response = "Starting your workout. Let's begin with 10 squats."
+
+            elif "suggest a meal" in command:
+                # Fetch dish data to suggest a meal
+                dishes = fetch_dish_data()
+                if dishes:
+                    dish = dishes[0]  # Example: Suggest the first dish in the database
+                    response = f"I suggest a healthy meal: **{dish[1]}**.\n\n"
+                    response += f"**Nutrition:** {dish[3]}\n"
+                    response += f"**Recipe:** {dish[4]}\n"
+                    response += f"**Steps:** {dish[5]}"
+                else:
+                    response = "I suggest a healthy salad with grilled chicken for lunch."
+
+            elif "track hydration" in command:
+                response = "How many glasses of water have you had today?"
+                st.session_state.hydration_tracking = True  # Enable hydration tracking mode
+
+            elif st.session_state.get("hydration_tracking", False):
+                # If hydration tracking mode is active, process the number of glasses
+                try:
+                    glasses = int(user_input)
+                    if glasses < 0:
+                        response = "Please enter a valid number of glasses (0 or more)."
+                    elif glasses == 0:
+                        response = "You haven't had any water today. It's important to stay hydrated! Start with a glass now."
+                    elif 1 <= glasses <= 3:
+                        response = f"You've had {glasses} glasses of water today. That's a good start, but try to drink more to stay hydrated!"
+                    elif 4 <= glasses <= 6:
+                        response = f"Great job! You've had {glasses} glasses of water today. Keep it up!"
+                    elif 7 <= glasses <= 8:
+                        response = f"Awesome! You've had {glasses} glasses of water today. You're on track to meet your daily hydration goal!"
+                    else:
+                        response = f"Wow! You've had {glasses} glasses of water today. Make sure not to overhydrate—listen to your body."
+                    st.session_state.hydration_tracking = False  # Disable hydration tracking mode after response
+                except ValueError:
+                    response = "Please enter a valid number of glasses."
+
+            elif "stop" in command:
+                response = "Stopping the AI Coach. Have a great day!"
+            else:
+                response = "Sorry, I didn't understand that command. Please try again."
+
+            st.write(f"**AI Coach:** {response}")
+            speak(response)  # Convert response to speech
+
+if selected == "AI Coach":
+    text_ai_coach()
 
 # Defining CSS file
 def local_css(file_name):
@@ -830,47 +899,127 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def health_tips():
+def Health_tips():
     st.title("💡 Daily Health Tips")
 
     tips = [
-        "💧 **Stay Hydrated:** Drink at least 2 liters of water daily.",
-        "🏋️ **Stay Active:** Exercise at least 30 minutes every day.",
-        "🥦 **Eat Right:** Include fiber, protein, and healthy fats in your diet.",
-        "😴 **Get Enough Sleep:** Aim for 7-9 hours of sleep for better health.",
-        "👀 **Reduce Screen Time:** Take short breaks to rest your eyes.",
-        "🧘 **Practice Mindfulness:** Deep breathing helps reduce stress.",
-        "🪑 **Improve Posture:** Sit upright to avoid back pain.",
-        "🚫🍭 **Limit Sugar Intake:** Too much sugar can lead to health issues."
+        {"text": "💧 **Stay Hydrated:** Drink at least 8 glasses (2 liters) of water daily.",
+         "image": "images/tips/Stay_Hydrated.jpg"},
+
+        {"text": "🥑 **Eat Healthy Fats:** Include avocados, nuts, and olive oil in your diet.",
+         "image": "images/tips/Eat_healthy.png"},
+
+        {"text": "🍊 **Boost Immunity:** Eat citrus fruits and leafy greens for Vitamin C.",
+         "image": "images/tips/Boost_Immunity.jpg"},
+
+        {"text": "🥗 **Portion Control:** Eat in moderation to maintain a balanced diet.",
+         "image": "images/tips/Portion_Control.png"},
+
+        {"text": "🚫🥤 **Avoid Sugary Drinks:** Choose water or herbal tea over soda.",
+         "image": "images/tips/Avoid_Sugary_Drinks.png"},
+
+        {"text": "🫘 **Eat More Fiber:** Whole grains, beans, and vegetables improve digestion.",
+         "image": "images/tips/Eat_More_Fiber.jpg"},
+
+        {"text": "🍵 **Drink Green Tea:** Loaded with antioxidants and boosts metabolism.",
+         "image": "images/tips/Drink_Green_Tea.png"},
+
+        {"text": "🐟 **Eat Omega-3 Rich Foods:** Fatty fish like salmon supports brain health.",
+         "image": "images/tips/Eat_Omega3.jpg"},
+
+        {"text": "🥕 **Consume More Antioxidants:** Berries, nuts, and dark chocolate help fight inflammation.",
+         "image": "images/tips/Consume_Antioxidants.png"},
+
+        {"text": "🚶‍♂️ **Take More Steps:** Aim for 10,000 steps daily for better heart health.",
+         "image": "images/tips/Take_More_Steps.png"},
+
+        {"text": "🏋️‍♂️ **Strength Training Matters:** Build muscle to boost metabolism.",
+         "image": "images/tips/Strength_Training.jpg"},
+
+        {"text": "🏃 **Stretch Regularly:** Prevent injuries by stretching before and after workouts.",
+         "image": "images/tips/Stretch_Regularly.jpeg"},
+
+        {"text": "🏊 **Try Different Exercises:** Mix cardio, strength, and flexibility workouts.",
+         "image": "images/tips/Try_Different_Exercises.png"},
+
+        {"text": "🧎 **Maintain Proper Form:** Avoid injuries by practicing correct posture.",
+         "image": "images/tips/Maintain_Proper_Form.jpg"},
+
+        {"text": "🚴 **Opt for Active Transport:** Walk or bike instead of using a car when possible.",
+         "image": "images/tips/Active_Transport.jpg"},
+
+        {"text": "🧘 **Practice Mindfulness:** Deep breathing and meditation help reduce stress.",
+         "image": "images/tips/Practice_Mindfulness.png"},
+
+        {"text": "🌱 **Try Aromatherapy:** Essential oils like lavender help with relaxation.",
+         "image": "images/tips/Try_Aromatherapy.png"},
+
+        {"text": "🌙 **Stick to a Sleep Schedule:** Sleep and wake up at the same time daily.",
+         "image": "images/tips/Sleep_Schedule.png"},
+
+        {"text": "🔕 **Limit Caffeine:** Avoid coffee at least 6 hours before bedtime.",
+         "image": "images/tips/Limit_Caffeine.jpg"},
+
+        {"text": "🪑 **Correct Your Sitting Posture:** Avoid slouching at your desk.",
+         "image": "images/tips/Sitting_Posture.jpg"},
+
+        {"text": "👁️ **Follow the 20-20-20 Rule:** Every 20 minutes, look 20 feet away for 20 seconds.",
+         "image": "images/tips/20_20_20_Rule.jpg"},
+
+        {"text": "🦷 **Oral Hygiene:** Brush twice daily and floss regularly.",
+         "image": "images/tips/Oral_Hygiene.jpg"},
+
+        {"text": "🌞 **Get Some Sun:** Vitamin D is essential for bone health.",
+         "image": "images/tips/Get_Sunlight.png"},
+
+        {"text": "🤲 **Wash Your Hands Regularly:** Helps prevent infections and illnesses.",
+         "image": "images/tips/Wash_Hands.jpg"},
+
+        {"text": "🚭 **Avoid Smoking & Alcohol:** Reduces risk of chronic diseases.",
+         "image": "images/tips/Avoid_Smoking_Alcohol.png"}
     ]
 
     if "tip_index" not in st.session_state:
         st.session_state.tip_index = 0
 
-    # Display current tip inside a styled box
+    col1, col2, col3 = st.columns([2, 3, 2])
+    with col1:
+        prev_clicked = st.button("⬅ Previous", key="prev_btn")
+    with col3:
+        next_clicked = st.button("Next ➡", key="next_btn")
+
+    if prev_clicked:
+        st.session_state.tip_index = (st.session_state.tip_index - 1) % len(tips)
+    if next_clicked:
+        st.session_state.tip_index = (st.session_state.tip_index + 1) % len(tips)
+
+    current_tip = tips[st.session_state.tip_index]
+
     st.markdown(
-        f'<div style="background-color: {"#1E1E1E" if st.session_state.theme == "dark" else "#F0F2F6"}; '
-        f'padding: 20px; border-radius: 10px; color: {"#FFFFFF" if st.session_state.theme == "dark" else "#000000"};'
-        f'">{tips[st.session_state.tip_index]}</div>',
+        f"""
+        <div style="
+            background-color: #F0F2F6;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333333;
+        ">
+            {current_tip["text"]}
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    # Centered navigation buttons
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        btn_prev, btn_next = st.columns([1, 1])
-
-        with btn_prev:
-            if st.button("⬅ Previous", key="prev_btn"):
-                st.session_state.tip_index = (st.session_state.tip_index - 1) % len(tips)
-
-        with btn_next:
-            if st.button("Next ➡", key="next_btn"):
-                st.session_state.tip_index = (st.session_state.tip_index + 1) % len(tips)
-
-
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.image(current_tip["image"], width=500)
+    
+    
+    
 if selected == "Health Tips":
-    health_tips()
+    Health_tips()
+
 
 
 # Contact Form Frontend
@@ -1318,3 +1467,94 @@ def food_browser():
 if selected == "Rescipes Browser":
     food_browser()
 
+def gather_user_preferences():
+    goal = st.selectbox("What's your main fitness goal?", ["Weight Loss", "Build Muscle", "Endurance", "General Fitness"])
+    experience = st.radio("What's your experience level?", ["Beginner", "Intermediate", "Advanced"])
+    restrictions = st.checkbox("Any injuries or limitations?")
+    return goal, experience, restrictions
+
+def process_query(query, exercise_data, user_preferences=None):
+    if user_preferences is None:
+        goal, experience, restrictions = gather_user_preferences()
+        return process_query(query, exercise_data, user_preferences={"goal": goal, "experience": experience, "restrictions": restrictions})
+    prompt = "User Query: " + query
+    response = co.generate(model='command-nightly', prompt=prompt, stop_sequences=["--"])
+    return response.generations[0].text
+if selected == "Chatbot":
+    st.title("Fitness Knowledge Chatbot")
+    user_preferences = gather_user_preferences()
+    user_input = st.text_input("Ask me about workouts or fitness...")
+    if st.button("Submit"):
+        chatbot_response = process_query(user_input, exercise_data, user_preferences)
+        st.write("Chatbot:", chatbot_response)
+
+
+# Function to fetch user progress from SQLite database
+def fetch_progress(username):
+    conn = sqlite3.connect("fitness.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT weight, calories_burned, diet, workout, progress, timestamp 
+        FROM progress_tracker WHERE username = ? ORDER BY timestamp DESC LIMIT 1
+    """, (username,))
+    progress = cursor.fetchone()
+    conn.close()
+    return progress
+
+def send_progress_email(username, recipient_email):
+    progress = fetch_progress(username)
+    if not progress:
+        return "⚠️ No progress data found!"
+
+    weight, calories, diet, workout, progress_notes, timestamp = progress
+
+    subject = f"📊 Daily Fitness Progress - {username}"
+    body = f"""
+    Hi {username},
+
+    Here is your daily progress update:
+
+    - **Date**: {timestamp}
+    - **Weight**: {weight} kg
+    - **Calories Burned**: {calories}
+    - **Diet**: {diet}
+    - **Workout**: {workout}
+    - **Overall Progress**: {progress_notes}
+
+    Keep pushing towards your fitness goals! 💪
+
+    Regards,  
+    Your Smart Fitness Tracker  
+    """
+
+    msg = MIMEMultipart()
+    msg["From"] = EMAIL_USER
+    msg["To"] = recipient_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_USER, EMAIL_PASS)
+        server.sendmail(EMAIL_USER, recipient_email, msg.as_string())
+        server.quit()
+        return "✅ Daily progress email sent successfully!"
+    except Exception as e:
+        return f"❌ Error sending email: {e}"
+
+if selected == "Daily Progress Email":
+    st.title("📩 Send Daily Progress Email")
+
+    if st.session_state.username:
+        email = st.text_input("Enter Recipient Email")
+        if st.button("Send Progress Update"):
+            if email:
+                response = send_progress_email(st.session_state.username, email)
+                st.success(response)
+            else:
+                st.warning("⚠️ Please enter an email address.")
+    else:
+        st.warning("⚠️ Please log in to send progress updates.")
+
+        

@@ -14,6 +14,7 @@ certifi==2022.9.24
 charset-normalizer==2.1.1
 click==8.1.4
 colorama==0.4.6
+cohere
 compress-pickle==2.1.0
 contourpy==1.0.6
 cycler==0.11.0
@@ -21,12 +22,14 @@ dacite==1.8.1
 decorator==5.1.1
 distlib==0.3.6
 docopt==0.6.2
+dotenv
 exceptiongroup==1.1.2
 fastapi==0.88.0
 filelock==3.12.2
 fonttools==4.38.0
 gitdb==4.0.10
 GitPython==3.1.32
+gtts
 h11==0.14.0
 htmlmin==0.1.12
 hydralit==1.0.14
@@ -62,7 +65,7 @@ protobuf==4.23.4
 psutil==5.9.5
 pyarrow==12.0.1
 pycodestyle==2.11.0
-pydantic==1.10.4
+pydantic==2.10.6
 pydantic_core==2.1.2
 pydeck==0.8.1b0
 pyecharts==2.0.3
@@ -79,6 +82,7 @@ referencing==0.29.1
 requests==2.28.1
 rich==13.4.2
 rpds-py==0.8.10
+SpeechRecognition
 scikit-learn==1.1.3
 scipy==1.11.1
 seaborn==0.12.2
