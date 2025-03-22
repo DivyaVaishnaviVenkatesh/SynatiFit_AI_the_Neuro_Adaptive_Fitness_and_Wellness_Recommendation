@@ -1084,8 +1084,39 @@ if selected == 'Medicine Recommender':
 # For custom food recommendations
 if selected == 'Diet':
     diet()
-    
+
+import pyttsx3  # Assuming you're using pyttsx3 for text-to-speech
+
+import pyttsx3  # For text-to-speech
+import streamlit as st
 from Custom_Diet import get_suggestion
+
+def preprocess_text(text):
+    """
+    Preprocesses the text to remove unwanted symbols and ensure readability.
+    """
+    # Replace semicolons and other unwanted symbols with spaces or remove them
+    text = text.replace(';', ' ').replace(',', ' ').replace('  ', ' ')  # Replace double spaces with single space
+    return text.strip()  # Remove leading/trailing spaces
+
+def speak(text):
+    """
+    Converts the given text to speech using pyttsx3.
+    """
+    # Preprocess the text to remove unwanted symbols
+    clean_text = preprocess_text(text)
+    
+    # Initialize the TTS engine
+    engine = pyttsx3.init()
+    
+    # Set properties (optional)
+    engine.setProperty('rate', 150)  # Speed of speech
+    engine.setProperty('volume', 1.0)  # Volume level (0.0 to 1.0)
+    
+    # Convert text to speech
+    engine.say(clean_text)
+    engine.runAndWait()
+
 def text_ai_coach():
     st.title("📝 AI Coach (Text-Based)")
     st.write("Type your request below to get personalized workout guidance, meal suggestions, and hydration tracking.")
@@ -1115,13 +1146,9 @@ def text_ai_coach():
                 workout_plan = generate_workout(level)
                 response = f"Starting your workout. Here's your personalized plan based on your level ({level}):\n"
                 for day, exercises in workout_plan.items():
-                      # Workout plan for other days
+                    if day == "Sunday":  # Special message for Sunday
                         response += f"\n{day}:\n"
-                        for exercise in exercises:
-                            response += f"- {exercise}\n"
-                        
-                response += f"\nSunday:\n"
-                response += (
+                        response += (
                             "🌞 Sunday is all about **rest, reflection, and recharging**! 🌞\n"
                             "Take this day to relax and focus on self-care. Here are some ideas:\n"
                             "- Go for a light walk in nature.\n"
@@ -1131,9 +1158,14 @@ def text_ai_coach():
                             "- Spend time with loved ones or enjoy a hobby.\n"
                             "Remember: 'Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit. Then get back to work.' – Ralph Marston\n"
                         )
+                    else:  # Workout plan for other days
+                        response += f"\n{day}:\n"
+                        for exercise in exercises:
+                            response += f"- {exercise}\n"
                 st.session_state.workout_plan = workout_plan  # Save workout plan in session state
 
             elif "suggest a meal" in command:
+                # Call the get_suggestion function with the correct arguments
                 meal_suggestion = get_suggestion(df, n=1)  # Pass the dataset (df) and number of suggestions (n=1)
                 if not meal_suggestion.empty:
                     response = (
@@ -1175,12 +1207,14 @@ def text_ai_coach():
             else:
                 response = "Sorry, I didn't understand that command. Please try again."
 
+            # Display the response
             st.write(f"**AI Coach:** {response}")
-            speak(response)  # Convert response to speech
+
+            # Speak the response (after preprocessing)
+            speak(response)
 
 if selected == 'AI Coach':
     text_ai_coach()
-
 
 
 # Function to load exercises from SQLite
