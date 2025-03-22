@@ -1,13 +1,19 @@
 import json
 import streamlit as st
 import pandas as pd
-import pandas_profiling as pp  # Ensure this is version 3.1.0
+import ydata_profiling as pp  # Ensure this is version 3.1.0
 import altair as alt
 import random
 import base64
 import plotly.express as px
 import plotly.graph_objects as go
 import sqlite3
+import os
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
+
+import tensorflow as tf
+import pickle
+
 
 def insert_diet_data(username, name, dosage, frequency, side_effects):
     conn = sqlite3.connect('fitness.db')
@@ -112,10 +118,27 @@ def profiling():
 
 
 # Load the Output dataset
-def load_data():
-    # Load the CSV file
-    data = pd.read_csv('dish_data.csv')
+def load_data(file_name):
+    data = pd.read_csv(file_name)
     return data
+# Load diet dataset
+df = load_data("dish_data.csv")
+
+# ✅ Ensure the 'Nutrition' column is correctly split
+if "Nutrition (Calories;Carbs;Fat;Protein)" in df.columns:
+    df[['Calories', 'Carbs', 'Fat', 'Protein']] = df['Nutrition (Calories;Carbs;Fat;Protein)'].str.split(';',
+                                                                                                         expand=True)
+
+    # Convert extracted columns to numeric
+    df['Calories'] = pd.to_numeric(df['Calories'], errors='coerce')
+    df['Carbs'] = pd.to_numeric(df['Carbs'], errors='coerce')
+    df['Fat'] = pd.to_numeric(df['Fat'], errors='coerce')
+    df['Protein'] = pd.to_numeric(df['Protein'], errors='coerce')
+
+    # Drop the original Nutrition column (optional, if no longer needed)
+    df.drop(columns=['Nutrition (Calories;Carbs;Fat;Protein)'], inplace=True)
+else:
+    raise KeyError("❌ 'Calories' column is missing in the dataset! Check column names.")
 
 
 # Generate random suggestions
@@ -137,42 +160,49 @@ def get_data(data):
         st.error("CSV file is missing required columns.")
         return pd.DataFrame()
 
+import os
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
+
+import tensorflow as tf
+import pickle
+import numpy as np
+import pandas as pd
+import streamlit as st
+
+# Load ANN Model & Scaler
+model = tf.keras.models.load_model("diet_ann_model.h5")
+#scaler = pickle.load(open("scaler.pkl", "rb"))
+
 
 # Diet Recommendation
 def display_recommendation(dataset):
-    st.header('DIET RECOMMENDATOR')
+    st.header('DIET RECOMMENDER')
+
+    if "Dish Name" not in dataset.columns or "Calories" not in dataset.columns:
+        st.error("⚠️ Missing required columns in dataset!")
+        return
+
     with st.spinner('Generating recommendations...'):
         st.subheader('Recommended recipes:')
         recipes = dataset
+
         for index, row in recipes.iterrows():
-            recipe_name = row['Dish Name']
-            ingredients = row['Ingredients']
-            calories = row['Calories']
-            instructions = row['Instructions']
+            recipe_name = row.get("Dish Name", "Unknown Dish")  # Use .get() to prevent KeyError
+            ingredients = row.get("Ingredients", "Ingredients not available")  # Handle missing column
+            calories = row.get("Calories", "N/A")
+            instructions = row.get("Instructions", "Instructions not available")
 
-            dosage = "Not available"  # Set as required or fetch from the dataset
-            frequency = "Not available"  # Set as required or fetch from the dataset
-            side_effects = "Not available"  # Set as required or fetch from the dataset
+            dosage = "Not available"
+            frequency = "Not available"
+            side_effects = "Not available"
 
-            # Use st.session_state.username instead of user_name
-            if st.session_state.username:
+            if "username" in st.session_state:
                 insert_diet_data(st.session_state.username, recipe_name, dosage, frequency, side_effects)
-            else:
-                st.warning("Please log in to save diet recommendations.")
 
             expander = st.expander(recipe_name)
-            expander.markdown(f'<h5 style="text-align: center;font-family:sans-serif;">Ingredients:</h5>', unsafe_allow_html=True)
-            expander.markdown(f"""
-                    - {ingredients}
-                """)
-            expander.markdown(f'<h5 style="text-align: center;font-family:sans-serif;">Recipe Instructions:</h5>', unsafe_allow_html=True)
-            expander.markdown(f"""
-                    - {instructions}
-                """)
-            expander.markdown(f'<h5 style="text-align: center;font-family:sans-serif;">Total Calories Intake:</h5>', unsafe_allow_html=True)
-            expander.markdown(f"""
-                        Total Calories Intake: {calories}
-                    """)
+            expander.markdown(f"### 🍽️ Ingredients: \n- {ingredients}")
+            expander.markdown(f"### 🍳 Recipe Instructions: \n- {instructions}")
+            expander.markdown(f"### 🔥 Calories: {calories}")
 
 
 # Load PDF File
@@ -228,12 +258,63 @@ def test_charts(files):
     display_charts(test_data)
     display_heatmap(test_data)
 
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import pickle
 
-# Display Menu
+# Load the trained scaler and model
+try:
+    with open("scaler.pkl", "rb") as f:
+        scaler = pickle.load(f)
+    model = tf.keras.models.load_model("diet_ann_model.h5")
+except FileNotFoundError:
+    print("❌ Error: Scaler or Model not found. Train them first.")
+    scaler = None
+    model = None
+
+
+
+def recommend_diet(age, height, weight, activity_level):
+    # ✅ Convert activity level to numeric
+    activity_mapping = {
+        "Little/no exercise": 1.2,
+        "Light exercise": 1.375,
+        "Moderate exercise (3-5 days/wk)": 1.55,
+        "Very active (6-7 days/wk)": 1.725,
+        "Extra active (very active & physical job)": 1.9
+    }
+    activity_value = activity_mapping.get(activity_level, 1.2)
+
+    # ✅ Ensure input is DataFrame
+    user_input = pd.DataFrame([[age, height, weight, activity_value]], columns=['Age', 'Height', 'Weight', 'Activity'])
+
+    # ✅ Scale input
+    user_input_scaled = scaler.transform(user_input)
+
+    # ✅ Get predictions
+    predicted_values = model.predict(user_input_scaled)[0]
+    calories, carbs, fat, protein = np.nan_to_num(predicted_values, nan=0.0)
+    # Fetch meal suggestions based on predicted calories
+    recommended_meals = df[
+        (df["Calories"].notna()) &  # Ensure Calories column has valid numbers
+        (df["Calories"] >= calories - 200) &
+        (df["Calories"] <= calories + 200)
+        ]
+    return {
+        "Calories": round(calories) if not np.isnan(calories) else 0,
+        "Carbs": round(carbs) if not np.isnan(carbs) else 0,
+        "Fat": round(fat) if not np.isnan(fat) else 0,
+        "Protein": round(protein) if not np.isnan(protein) else 0,
+        "Meals": recommended_meals.sample(3)[
+            ["Dish Name", "Calories", "Carbs", "Fat", "Protein", "Ingredients", "Instructions"]
+        ].to_dict(orient="records") if not recommended_meals.empty else []
+    }
+#Display Menu
 def display_menu():
     st.title('Custom Diet Recommendations')
     display = Display()
-    files = load_data()  # Load CSV data
+    files = load_data("dish_data.csv") # Load CSV data
     age = st.number_input('Age', min_value=2, max_value=80, step=1)
     height = st.number_input('Height(cm)', min_value=50, max_value=300, step=1)
     weight = st.number_input('Weight(Kg)', min_value=10, max_value=300, step=1)
@@ -251,11 +332,23 @@ def display_menu():
         person = Person(age, height, weight, gender, activity, weight_loss)
 
         # Get recommendations from the CSV data
-        health_data_files = get_suggestion(files, number_of_meals)
-        health_data_files[['Calories', 'Carbs', 'Fat', 'Protein']] = health_data_files['Nutrition (Calories;Carbs;Fat;Protein)'].str.split(';', expand=True)
+        #health_data_files = get_suggestion(files, number_of_meals)
+        #health_data_files[['Calories', 'Carbs', 'Fat', 'Protein']] = health_data_files['Nutrition (Calories;Carbs;Fat;Protein)'].str.split(';', expand=True)
         #Convert Calories to numeric (if needed)
-        health_data_files['Calories'] = pd.to_numeric(health_data_files['Calories'], errors='coerce')        
+        #health_data_files['Calories'] = pd.to_numeric(health_data_files['Calories'], errors='coerce')
+        # Call ANN-based diet recommendation instead of get_suggestion()
+        results = recommend_diet(age, height, weight, activity)
+        # Convert recommended meals to DataFrame format for visualization
+        # Ensure results is a dictionary with "Meals" key
+        if "Error" in results:
+            st.error(f"Error: {results['Error']}")
+            return  # Stop execution if there's an error
 
+        if isinstance(results.get("Meals", []), list):
+            health_data_files = pd.DataFrame(results["Meals"])
+        else:
+            health_data_files = pd.DataFrame()  # Empty DataFrame to prevent crash
+        #health_data_files = pd.DataFrame(results["Meals"])
         display.display_bmi(person)
         display.display_calories(person)
         display_recommendation(health_data_files)

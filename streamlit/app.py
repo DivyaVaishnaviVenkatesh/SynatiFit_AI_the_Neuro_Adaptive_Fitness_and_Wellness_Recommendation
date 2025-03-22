@@ -21,6 +21,7 @@ def read_image(file_path):
     with open(file_path, "rb") as file:
         return file.read()
 
+
 # Load environment variables
 load_dotenv()
 EMAIL_USER = os.getenv("EMAIL_USER")
@@ -364,8 +365,6 @@ def speak(text):
     os.system("start response.mp3")  # Play the audio file
     time.sleep(1)
 
-
-
 # Side bar initialization and creation
 with st.sidebar:
     if st.session_state.logged_in:
@@ -374,7 +373,7 @@ with st.sidebar:
             menu_title="SFTPR",
             options=[
                 "Home", "Diet", "Workout Suggestion", "Medicine Recommender",
-                "Progress Tracker", "Exercise Browser", "Rescipes Browser",
+                "Progress Tracker", "Exercise Browser", "Recipes Browser",
                 "Health Tips", "Contact", "AI Coach", "Chatbot","Daily Progress Email","Settings"
             ],
             icons=[
@@ -432,7 +431,7 @@ def login_user(username, password):
         st.session_state.username = username  # Store username in session state
         st.session_state.logged_in = True
         st.success(f"🎉 Logged in as **{username}**")
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.error("❌ Invalid username or password.")
 
@@ -525,11 +524,11 @@ def homepage():
     with left_column:
         st.markdown(words, unsafe_allow_html=True)
     with right_column:
-        st.image(image, use_column_width=True)  # Show static image
+        st.image(image, use_container_width=True)  # Show static image
 
     # Display the GIF with proper alignment
     st.markdown("<h2 style='text-align:center;'>Stay Motivated 💪</h2>", unsafe_allow_html=True)
-    st.image(gif_path, use_column_width=True, width = 400)  # Display the GIF
+    st.image(gif_path, use_container_width=True, width = 400)  # Display the GIF
 
     st.title('Dataset')
     st.subheader("User Data from Database:")
@@ -803,29 +802,98 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-import streamlit as st
-import os
-
-import streamlit as st
-import os
-
 def Health_tips():
     st.title("💡 Daily Health Tips")
 
     tips = [
+        # Hydration & Nutrition
         {"text": "💧 **Stay Hydrated:** Drink at least 8 glasses (2 liters) of water daily.",
          "image": "images/tips/Stay_Hydrated.jpg"},
 
         {"text": "🥑 **Eat Healthy Fats:** Include avocados, nuts, and olive oil in your diet.",
-         "image": "images/tips/Eat_healthy.png"}
+         "image": "images/tips/Eat_healthy.png"},
+
+        {"text": "🍊 **Boost Immunity:** Eat citrus fruits and leafy greens for Vitamin C.",
+         "image": "images/tips/Boost_Immunity.jpg"},
+
+        {"text": "🥗 **Portion Control:** Eat in moderation to maintain a balanced diet.",
+         "image": "images/tips/Portion_Control.png"},
+
+        {"text": "🚫🥤 **Avoid Sugary Drinks:** Choose water or herbal tea over soda.",
+         "image": "images/tips/Avoid_Sugary_Drinks.png"},
+
+        {"text": "🫘 **Eat More Fiber:** Whole grains, beans, and vegetables improve digestion.",
+         "image": "images/tips/Eat_More_Fiber.jpg"},
+
+        {"text": "🍵 **Drink Green Tea:** Loaded with antioxidants and boosts metabolism.",
+         "image": "images/tips/Drink_Green_Tea.png"},
+
+        {"text": "🐟 **Eat Omega-3 Rich Foods:** Fatty fish like salmon supports brain health.",
+         "image": "images/tips/Eat_Omega3.jpg"},
+
+        {"text": "🥕 **Consume More Antioxidants:** Berries, nuts, and dark chocolate help fight inflammation.",
+         "image": "images/tips/Consume_Antioxidants.png"},
+
+        # Physical Activity
+        {"text": "🚶‍♂️ **Take More Steps:** Aim for 10,000 steps daily for better heart health.",
+         "image": "images/tips/Take_More_Steps.png"},
+
+        {"text": "🏋️‍♂️ **Strength Training Matters:** Build muscle to boost metabolism.",
+         "image": "images/tips/Strength_Training.jpg"},
+
+        {"text": "🏃 **Stretch Regularly:** Prevent injuries by stretching before and after workouts.",
+         "image": "images/tips/Stretch_Regularly.jpeg"},
+
+        {"text": "🏊 **Try Different Exercises:** Mix cardio, strength, and flexibility workouts.",
+         "image": "images/tips/Try_Different_Exercises.png"},
+
+        {"text": "🧎 **Maintain Proper Form:** Avoid injuries by practicing correct posture.",
+         "image": "images/tips/Maintain_Proper_Form.jpg"},
+
+        {"text": "🚴 **Opt for Active Transport:** Walk or bike instead of using a car when possible.",
+         "image": "images/tips/Active_Transport.jpg"},
+
+        # Mental Health & Wellness
+
+        {"text": "🧘 **Practice Mindfulness:** Deep breathing and meditation help reduce stress.",
+         "image": "images/tips/Practice_Mindfulness.png"},
+
+        {"text": "🌱 **Try Aromatherapy:** Essential oils like lavender help with relaxation.",
+         "image": "images/tips/Try_Aromatherapy.png"},
+
+        # Sleep & Recovery
+        {"text": "🌙 **Stick to a Sleep Schedule:** Sleep and wake up at the same time daily.",
+         "image": "images/tips/Sleep_Schedule.png"},
+
+        {"text": "🔕 **Limit Caffeine:** Avoid coffee at least 6 hours before bedtime.",
+         "image": "images/tips/Limit_Caffeine.jpg"},
+
+        # Ergonomics & Lifestyle
+        {"text": "🪑 **Correct Your Sitting Posture:** Avoid slouching at your desk.",
+         "image": "images/tips/Sitting_Posture.jpg"},
+
+        {"text": "👁️ **Follow the 20-20-20 Rule:** Every 20 minutes, look 20 feet away for 20 seconds.",
+         "image": "images/tips/20_20_20_Rule.jpg"},
+
+        {"text": "🦷 **Oral Hygiene:** Brush twice daily and floss regularly.",
+         "image": "images/tips/Oral_Hygiene.jpg"},
+
+        {"text": "🌞 **Get Some Sun:** Vitamin D is essential for bone health.",
+         "image": "images/tips/Get_Sunlight.png"},
+
+        {"text": "🤲 **Wash Your Hands Regularly:** Helps prevent infections and illnesses.",
+         "image": "images/tips/Wash_Hands.jpg"},
+
+        {"text": "🚭 **Avoid Smoking & Alcohol:** Reduces risk of chronic diseases.",
+         "image": "images/tips/Avoid_Smoking_Alcohol.png"}
     ]
 
     # Initialize session state
     if "tip_index" not in st.session_state:
         st.session_state.tip_index = 0
 
-    # Navigation Buttons
-    col1, col2, col3 = st.columns([2, 3, 2])
+    # Navigation Logic (Handle Click Before Display)
+    col1, col2, col3 = st.columns([2, 3, 2])  # Adjust width to keep buttons centered
     with col1:
         prev_clicked = st.button("⬅ Previous", key="prev_btn")
     with col3:
@@ -838,20 +906,19 @@ def Health_tips():
 
     # Get the current tip
     current_tip = tips[st.session_state.tip_index]
-
-    # 🛠 Fix: Use a **dark text color** inside the white box
+    # Display the tip text in a styled box
     st.markdown(
         f'''
-        <div style="
-            background-color: #F0F2F6; 
-            padding: 15px; 
-            border-radius: 10px; 
-            text-align: center;
-            color: #333;  /* Dark gray text */
-            font-size: 18px;">
-            {current_tip["text"]}
-        </div>
-        ''',
+                <div style="
+                    background-color: #F0F2F6; 
+                    padding: 15px; 
+                    border-radius: 10px; 
+                    text-align: center;
+                    color: #333;  /* Dark gray text */
+                    font-size: 18px;">
+                    {current_tip["text"]}
+                </div>
+                ''',
         unsafe_allow_html=True
     )
 
@@ -864,13 +931,13 @@ def Health_tips():
     else:
         st.warning(f"⚠ Image not found: {current_tip['image']}")
         st.image("https://via.placeholder.com/500", width=500)
-
-
-
+    # Display the image with fixed width for uniform size
+    #st.image(current_tip["image"], width=500)  # Adjust width as needed
 
 
 if selected == "Health Tips":
-        Health_tips()
+    Health_tips()
+
 
 
 # Contact Form Frontend
@@ -939,7 +1006,22 @@ def generate_workout(level):
     return exercise_by_level[level]
 
 
-# For Workout Suggestion
+import pickle
+import pandas as pd
+import streamlit as st
+from genetic_model import genetic_algorithm
+# Load the saved genetic model
+with open("genetic_model.pkl", "rb") as model_file:
+    genetic_algorithms = pickle.load(model_file)
+
+def load_workouts(csv_file):
+    return pd.read_csv(csv_file)
+
+# Define function to filter workouts
+def filter_workouts(age, duration, level, df):
+    return df[(df['Age Group'] == age) & (df['Workout Duration'] == duration) & (df['Fitness Level'] == level)]
+
+
 if selected == 'Workout Suggestion':
     st.title('Personalized Workout Recommender')
 
@@ -949,64 +1031,61 @@ if selected == 'Workout Suggestion':
     button = st.button('Recommend Workout')
 
     if button:
-        if level == 'Select':
-            st.warning('Insertion error!! Re-check the input fields')
+        if level == "Select" or age == "Select":
+            st.warning("⚠ Insertion error!! Re-check the input fields.")
         else:
-            nums = 1  # Initialize counter for days
-            workout_plan = generate_workout(level)
+            df = load_workouts("workout_plan.csv")  # Load your workout dataset
+            filtered_df = filter_workouts(age, duration, level, df)
 
-            # Define days of the week explicitly
-            days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            workout_data = []  # List to store workout details for visualization
+            if filtered_df.empty:
+                st.error("❌ No workout plan found for the selected criteria.")
+            else:
+                workout_plan = genetic_algorithms(filtered_df)
 
-            for day in days_of_week:
-                if day == "Sunday":
-                    st.markdown(
-                        f"""
-                        <h4>Your Workout Plan for Day {nums}: {day}</h4>
-                        <div class="sundays">
-                            <p style="color:#7FFF00; font-style:italic; font-family:cursive;">Take rest and go for a light walk in the park.</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    workout_data.append({"Day": day, "Workout Count": 0})  # No workouts on Sunday
-                else:
-                    exercises = exercise_by_level[level].get(day, ["No workout assigned"])
-                    exercise_str = ", ".join(exercises)
-                    insert_workout_data(st.session_state.username, f"Day {nums} Workout ({day})", exercise_str, level,
-                                        30)
+                st.subheader("🏋️ Your Personalized Workout Plan:")
+                days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                workout_data = []
 
-                    st.markdown(
-                        f"""
-                        <h4>Your Workout Plan for Day {nums}: {day}</h4>
-                        <div class="workout">
-                            <div class="workout-info">
-                                <p style="color:#7FFF00; font-style:italic; font-family:cursive;">Workout: {exercise_str}</p>
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                for idx, day in enumerate(days_of_week):
+                    if day == "Sunday":  # Keep rest day only for Sunday
+                        st.markdown(f"""
+                                        <h4>Your Workout Plan for {day}</h4>
+                                        <div class="sundays">
+                                            <p style="color:#7FFF00; font-style:italic; font-family:cursive;">Rest day - Light walk in the park.</p>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                        workout_data.append({"Day": day, "Workout Count": 0})
+                    else:  # Ensure all other days have workouts
+                        exercise_str = workout_plan[idx]
+                        st.markdown(f"""
+                                        <h4>Your Workout Plan for {day}</h4>
+                                        <div class="workout">
+                                            <div class="workout-info">
+                                                <p style="color:#7FFF00; font-style:italic; font-family:cursive;">Workout: {exercise_str}</p>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                        workout_data.append({"Day": day, "Workout Count": len(exercise_str.split(','))})
 
-                    workout_data.append({"Day": day, "Workout Count": len(exercises)})
-
-                nums += 1  # Increment day counter
-
-            # Insert user workout details into the user_data table
-            insert_user_data(st.session_state.username, age, level, str(workout_plan))
-
-            # Convert data to Pandas DataFrame
-            df = pd.DataFrame(workout_data)
-
-            # Create a bar chart for workout distribution
-            st.subheader("📊 Workout Distribution Over the Week")
-            fig = px.bar(df, x="Day", y="Workout Count", title="Number of Workouts per Day",
-                         labels={"Workout Count": "Number of Exercises"},
-                         color="Workout Count", height=400)
-            st.plotly_chart(fig)
+                # 📊 Workout Distribution Chart
+                df_chart = pd.DataFrame(workout_data)
+                st.subheader("📊 Workout Distribution Over the Week")
+                fig = px.bar(df_chart, x="Day", y="Workout Count", title="Number of Workouts per Day",
+                             labels={"Workout Count": "Number of Exercises"}, color="Workout Count", height=400)
+                st.plotly_chart(fig)
 
 
+
+
+# For Medicine Recommender
+if selected == 'Medicine Recommender':
+    main_1()
+
+# For custom food recommendations
+if selected == 'Diet':
+    diet()
+    
+from Custom_Diet import get_suggestion
 def text_ai_coach():
     st.title("📝 AI Coach (Text-Based)")
     st.write("Type your request below to get personalized workout guidance, meal suggestions, and hydration tracking.")
@@ -1036,26 +1115,34 @@ def text_ai_coach():
                 workout_plan = generate_workout(level)
                 response = f"Starting your workout. Here's your personalized plan based on your level ({level}):\n"
                 for day, exercises in workout_plan.items():
-                    response += f"\n{day}:\n"
-                    for exercise in exercises:
-                        response += f"- {exercise}\n"
+                      # Workout plan for other days
+                        response += f"\n{day}:\n"
+                        for exercise in exercises:
+                            response += f"- {exercise}\n"
+                        
+                response += f"\nSunday:\n"
+                response += (
+                            "🌞 Sunday is all about **rest, reflection, and recharging**! 🌞\n"
+                            "Take this day to relax and focus on self-care. Here are some ideas:\n"
+                            "- Go for a light walk in nature.\n"
+                            "- Reflect on your achievements from the past week.\n"
+                            "- Plan your goals for the upcoming week.\n"
+                            "- Practice mindfulness or meditation.\n"
+                            "- Spend time with loved ones or enjoy a hobby.\n"
+                            "Remember: 'Rest when you're weary. Refresh and renew yourself, your body, your mind, your spirit. Then get back to work.' – Ralph Marston\n"
+                        )
                 st.session_state.workout_plan = workout_plan  # Save workout plan in session state
 
             elif "suggest a meal" in command:
-                # Fetch dish data to suggest a meal based on user's fitness level
-                dishes = fetch_dish_data()
-                if dishes:
-                    if level == "beginner":
-                        dish = dishes[0]  # Example: Suggest the first dish for beginners
-                    elif level == "intermediate":
-                        dish = dishes[1]  # Example: Suggest the second dish for intermediate users
-                    else:
-                        dish = dishes[2]  # Example: Suggest the third dish for advanced users
-
-                    response = f"I suggest a healthy meal: **{dish[1]}**.\n\n"
-                    response += f"**Nutrition:** {dish[3]}\n"
-                    response += f"**Recipe:** {dish[4]}\n"
-                    response += f"**Steps:** {dish[5]}"
+                meal_suggestion = get_suggestion(df, n=1)  # Pass the dataset (df) and number of suggestions (n=1)
+                if not meal_suggestion.empty:
+                    response = (
+                        f"Here's a personalized meal suggestion for you (based on your level: {level}):\n\n"
+                        f"**Meal Name:** {meal_suggestion.iloc[0]['Dish Name']}\n"
+                        f"**Calories:** {meal_suggestion.iloc[0]['Calories']}\n"
+                        f"**Ingredients:** {meal_suggestion.iloc[0]['Ingredients']}\n"
+                        f"**Instructions:** {meal_suggestion.iloc[0]['Instructions']}"
+                    )
                 else:
                     response = "I suggest a healthy salad with grilled chicken for lunch."
 
@@ -1091,17 +1178,9 @@ def text_ai_coach():
             st.write(f"**AI Coach:** {response}")
             speak(response)  # Convert response to speech
 
-if selected == "AI Coach":
+if selected == 'AI Coach':
     text_ai_coach()
 
-
-# For Medicine Recommender
-if selected == 'Medicine Recommender':
-    main_1()
-
-# For custom food recommendations
-if selected == 'Diet':
-    diet()
 
 
 # Function to load exercises from SQLite
@@ -1404,7 +1483,7 @@ def food_browser():
                 steps_table += "</table>"
                 st.markdown(steps_table, unsafe_allow_html=True)
 
-if selected == "Rescipes Browser":
+if selected == "Recipes Browser":
     food_browser()
 
 load_dotenv(encoding="utf-8")
@@ -1438,7 +1517,6 @@ if selected == "Chatbot":
         if st.button("Submit"):
             chatbot_response = process_query(user_input, None, user_preferences)
             st.write("Chatbot:", chatbot_response)
-
 
 # Function to fetch user progress from SQLite database
 def fetch_progress(username):
@@ -1493,6 +1571,7 @@ def send_progress_email(username, recipient_email):
         return "✅ Daily progress email sent successfully!"
     except Exception as e:
         return f"❌ Error sending email: {e}"
+
 import base64
 
 def get_base64_image(image_path):
