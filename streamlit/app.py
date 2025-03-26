@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import matplotlib
 from test import *
+from test import main
 from Custom_Diet import *
 from PIL import Image
 import sqlite3
@@ -15,6 +16,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import smtplib
+import PyPDF2
+import io
+import re
+from datetime import datetime
 
 def read_image(file_path):
     """Reads an image file and returns its binary data as a BLOB."""
@@ -91,6 +96,17 @@ def init_db():
         dosage_form TEXT,
         strength TEXT,
         instructions TEXT
+    )
+''')
+    # Add this with the other table creations in init_db()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS medicine_recommendations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        conditions TEXT,
+        medications TEXT,
+        recommendations TEXT,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 ''')
 
@@ -291,6 +307,19 @@ def fetch_dish_data():
     dishes = cursor.fetchall()
     conn.close()
     return dishes
+
+def fetch_medicine_recommendations(username):
+    """Fetch medicine recommendations for a user"""
+    conn = sqlite3.connect('fitness.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM medicine_recommendations 
+        WHERE username = ? 
+        ORDER BY date DESC
+    ''', (username,))
+    data = cursor.fetchall()
+    conn.close()
+    return data
 
 # Function to display contact messages
 def display_contact_messages():
@@ -531,17 +560,7 @@ def homepage():
     st.image(gif_path, use_container_width=True, width = 400)  # Display the GIF
 
     st.title('Dataset')
-    st.subheader("User Data from Database:")
-
-    # Fetch user data using session state
-    if st.session_state.username:
-        user_data = fetch_user_data(st.session_state.username)
-        if user_data:
-            st.dataframe(pd.DataFrame(user_data, columns=["ID", "Username", "Age", "Level", "Workout Plan"]))
-        else:
-            st.write("No user data found.")
-    else:
-        st.write("Please log in to view user data.")
+  
 
     # Hardcoded dataset path
     dataset_path = "dish_data.csv"  # Change this to your dataset path
@@ -1075,15 +1094,14 @@ if selected == 'Workout Suggestion':
                 st.plotly_chart(fig)
 
 
-
-
 # For Medicine Recommender
 if selected == 'Medicine Recommender':
-    main_1()
+    main()
 
 # For custom food recommendations
 if selected == 'Diet':
     diet()
+
 
 import pyttsx3  # Assuming you're using pyttsx3 for text-to-speech
 
